@@ -1,0 +1,648 @@
+[
+    {
+        "id": "ce3e0c57ab8b309a",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "83a4c65b02aa87ef",
+        "type": "inject",
+        "z": "ce3e0c57ab8b309a",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 170,
+        "y": 380,
+        "wires": [
+            [
+                "cbab914f9cae09ee"
+            ]
+        ]
+    },
+    {
+        "id": "cbab914f9cae09ee",
+        "type": "function",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Generate Data and Split",
+        "func": "// Generate random ID and UNIX timestamp\nlet id = Math.floor(Math.random() * 30001); \nlet ts = Math.floor(Date.now() / 1000);     \n\n// Build the MQTT payload\nlet mqttPayload = {\"id\": id, \"timestamp\": ts};\n\n// Use context to track the row number\nlet count = context.get('count') || 1;\n\n// Build the CSV row only if within the 200-message limit\nlet csvMsg = null;\nif (count <= 200) {\n    let csvString = `${count},${id},${ts}\\n`;\n    if (count === 1) {\n        csvString = `No.,ID,TIMESTAMP\\n${csvString}`;\n    }\n    csvMsg = { payload: csvString };\n}\n\n// Increment the counter\ncontext.set('count', count + 1);\n\n// Send output 1 to MQTT pin and output 2 to CSV pin\nreturn [\n    { payload: mqttPayload }, \n    csvMsg    \n];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 380,
+        "wires": [
+            [
+                "85aa09ba7f4274e3"
+            ],
+            [
+                "e8a8df5427f8d724"
+            ]
+        ]
+    },
+    {
+        "id": "85aa09ba7f4274e3",
+        "type": "mqtt out",
+        "z": "ce3e0c57ab8b309a",
+        "name": "",
+        "topic": "challenge3/id_generator",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "168b69160784847c",
+        "x": 630,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "4b65a301b0fd8c3f",
+        "type": "inject",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Startup",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 160,
+        "wires": [
+            [
+                "a7e5b182db28763e"
+            ]
+        ]
+    },
+    {
+        "id": "a7e5b182db28763e",
+        "type": "file in",
+        "z": "ce3e0c57ab8b309a",
+        "name": "",
+        "filename": "/Users/carmengiaccotto/Desktop/challenge3.csv",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 470,
+        "y": 160,
+        "wires": [
+            [
+                "2d994dea980d6b69"
+            ]
+        ]
+    },
+    {
+        "id": "2d994dea980d6b69",
+        "type": "csv",
+        "z": "ce3e0c57ab8b309a",
+        "name": "",
+        "spec": "rfc",
+        "sep": ",",
+        "hdrin": true,
+        "hdrout": "none",
+        "multi": "mult",
+        "ret": "\\r\\n",
+        "temp": "",
+        "skip": "0",
+        "strings": true,
+        "include_empty_strings": "",
+        "include_null_values": "",
+        "x": 790,
+        "y": 160,
+        "wires": [
+            [
+                "8a08e0104f9d8546"
+            ]
+        ]
+    },
+    {
+        "id": "8a08e0104f9d8546",
+        "type": "function",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Save to Memory",
+        "func": "// Store parsed CSV rows in global context for later lookup\nglobal.set(\"csvData\", msg.payload);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 970,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e8a8df5427f8d724",
+        "type": "file",
+        "z": "ce3e0c57ab8b309a",
+        "name": "",
+        "filename": "/Users/carmengiaccotto/Desktop/id_log.csv",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 710,
+        "y": 420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "42e57bb93825759d",
+        "type": "mqtt in",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Receive ID",
+        "topic": "challenge3/id_generator",
+        "qos": "2",
+        "datatype": "json",
+        "broker": "168b69160784847c",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 150,
+        "y": 580,
+        "wires": [
+            [
+                "e004c83b6ae02a1c"
+            ]
+        ]
+    },
+    {
+        "id": "e004c83b6ae02a1c",
+        "type": "function",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Compute N and Lookup CSV",
+        "func": "let msgCount = context.get('msgCount') || 0;\nif (msgCount >= 200) {\n    return null; // Stop after 200 messages\n}\nmsgCount++;\ncontext.set('msgCount', msgCount);\n\n// Safety check: make sure payload is a valid JSON object\nif (typeof msg.payload !== 'object' || !msg.payload.id) {\n    node.warn(\"Payload is not a valid JSON object.\");\n    return null;\n}\n\nlet subId = msg.payload.id;\nlet N = subId % 5218;\n\n// Retrieve CSV data from global context\nlet csvData = global.get(\"csvData\");\n\n// Critical check: csvData must be an array\nif (!Array.isArray(csvData)) {\n    node.warn(\"CRITICAL ERROR: csvData is not an Array. Check the CSV node settings.\");\n    return null;\n}\n\n// Find the row whose Packet Number matches N\nlet row = csvData.find(r => parseInt(r['Packet Number']) === N);\n\nif (!row) return null; // Row not found, stop processing\n\nmsg.row = row;\nmsg.subId = subId;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 580,
+        "wires": [
+            [
+                "b790a69c0b8ec753"
+            ]
+        ]
+    },
+    {
+        "id": "b790a69c0b8ec753",
+        "type": "switch",
+        "z": "ce3e0c57ab8b309a",
+        "name": "",
+        "property": "row[\"Command String\"]",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "ZBEE_ZCL",
+                "vt": "str"
+            },
+            {
+                "t": "cont",
+                "v": "Link Status",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 650,
+        "y": 580,
+        "wires": [
+            [
+                "33dc8e75dbd052e6"
+            ],
+            [
+                "54dfda3a02c94a79"
+            ]
+        ]
+    },
+    {
+        "id": "33dc8e75dbd052e6",
+        "type": "function",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Format ZBEE Payload",
+        "func": "let row = msg.row;\n\n// Helper function to convert values to hexadecimal format with 4-digit padding\nfunction toHex(val) {\n    if (val === undefined || val === null) return \"0x0000\";\n    return \"0x\" + Number(val).toString(16).padStart(4, '0');\n}\n\n// Remove '+' from device name as it is not valid in MQTT topic names\nlet devName = (row['Device Name ZigBee Source'] || '').replace(/\\+/g, '');\n\nmsg.payload = {\n    \"timestamp\": Math.floor(Date.now() / 1000), \n    \"id\": msg.subId,                            \n    \"wpan.src\": toHex(row['Source Address']),\n    \"wpan.dst\": toHex(row['Destination Address']),\n    \"zbee.src\": toHex(row['Source Address ZigBee']),\n    \"zbee.dst\": toHex(row['Destination Address ZigBee']),\n    \"topic\": \"ZigBee/\" + devName,\n    \"payload\": row['Command String']            \n};\n\nmsg.topic = \"ZigBee/\" + devName; \nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 840,
+        "y": 580,
+        "wires": [
+            [
+                "4f4eae96b6fd73d5"
+            ]
+        ]
+    },
+    {
+        "id": "4f4eae96b6fd73d5",
+        "type": "delay",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Rate Limiter",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "10",
+        "nbRateUnits": "1",
+        "rateUnits": "minute",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1030,
+        "y": 580,
+        "wires": [
+            [
+                "6a528f771fa8b630",
+                "4270cc596eb63180"
+            ]
+        ]
+    },
+    {
+        "id": "6a528f771fa8b630",
+        "type": "mqtt out",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Send ZigBee",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "168b69160784847c",
+        "x": 1210,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "4270cc596eb63180",
+        "type": "function",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Extract Data",
+        "func": "let cmd = msg.payload.payload;\nif (!cmd) return null;\n\n// Check if the command string contains at least one of the required attributes\nif (!cmd.includes(\"Active Power\") && !cmd.includes(\"RMS Current\") && !cmd.includes(\"RMS Voltage\")) {\n    return null;\n}\n\n// Extract Sequence Number\nlet seqMatch = cmd.match(/'Sequence Number':\\s*'([^']+)'/);\nlet seq = seqMatch ? seqMatch[1] : \"\";\n\n// Helper function to extract lists from Python-dict-style strings\nfunction getList(key) {\n    let regex = new RegExp(`'${key}':\\\\s*\\\\[(.*?)\\\\]`);\n    let match = cmd.match(regex);\n    if (match) return match[1].split(',').map(s => s.trim().replace(/^'|'$/g, ''));\n\n    // Handle single value instead of a list\n    regex = new RegExp(`'${key}':\\\\s*'([^']+)'`);\n    match = cmd.match(regex);\n    if (match) return [match[1]];\n    return [];\n}\n\nlet attrs = getList('Attribute');\nlet statuses = getList('Status');\nlet types = getList('Data Type');\n\n// Extract numeric values from Int16 or Uint16 fields\nlet values = [];\nlet intMatch = cmd.match(/'Int16':\\s*'([^']+)'/);\nif (intMatch) values.push(intMatch[1]);\n\nlet uintMatch = cmd.match(/'Uint16':\\s*\\[(.*?)\\]/);\nif (uintMatch) {\n    values.push(...uintMatch[1].split(',').map(s => s.trim().replace(/^'|'$/g, '')));\n} else {\n    let uintSingle = cmd.match(/'Uint16':\\s*'([^']+)'/);\n    if (uintSingle) values.push(uintSingle[1]);\n}\n\nlet timestamp = msg.payload.timestamp;\nlet csvString = \"\";\nlet msgVoltage = null;\nlet msgCurrent = null;\n\nlet count = context.get('count') || 1;\n\n// Build CSV rows matching attributes by position\nfor (let i = 0; i < attrs.length; i++) {\n    let aFull = attrs[i] || \"\";\n    let sFull = statuses[i] || \"\";\n    let tFull = types[i] || \"\";\n    let vFull = values[i] || \"\";\n\n    // Strip code suffixes (e.g. \"RMS Voltage (0x0505)\" -> \"RMS Voltage\")\n    let a = aFull.split(\" (\")[0];\n    let s = sFull.split(\" (\")[0];\n    let t = tFull.split(\" (\")[0];\n    let v = vFull.split(\" (\")[0];\n\n    if (a === \"Active Power\" || a === \"RMS Current\" || a === \"RMS Voltage\") {\n        // Skip attribute if Status or Data Type are missing (incomplete fields)\n        if (!s || !t) continue;\n\n        let line = `${count},${timestamp},${seq},${a},${s},${t},${v}\\n`;\n        // Write header on the very first row\n        if (count === 1) {\n            line = `No.,Timestamp,Sequence Number,Attribute,Status,Data Type,Data Value\\n` + line;\n        }\n        csvString += line;\n        count++;\n\n        // Prepare values for the dashboard charts\n        let numVal = parseFloat(v);\n        if (a === \"RMS Voltage\") msgVoltage = { payload: numVal };\n        if (a === \"RMS Current\") msgCurrent = { payload: numVal };\n    }\n}\n\ncontext.set('count', count);\n\n// Send outputs to 3 separate pins\nreturn [\n    csvString ? { payload: csvString } : null, // Pin 1: CSV file\n    msgVoltage,                                // Pin 2: RMS Voltage chart\n    msgCurrent                                 // Pin 3: RMS Current chart\n];",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1170,
+        "y": 640,
+        "wires": [
+            [
+                "d9ac856e0230272c"
+            ],
+            [
+                "9fef33d332de7f6b"
+            ],
+            [
+                "9620e2ab4d530612"
+            ]
+        ]
+    },
+    {
+        "id": "d9ac856e0230272c",
+        "type": "file",
+        "z": "ce3e0c57ab8b309a",
+        "name": "",
+        "filename": "/Users/carmengiaccotto/Desktop/filtered_elems.csv",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 1520,
+        "y": 620,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9fef33d332de7f6b",
+        "type": "ui_chart",
+        "z": "ce3e0c57ab8b309a",
+        "name": "",
+        "group": "19cb4a28f113a418",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "label": "RMS Voltage",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1390,
+        "y": 680,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9620e2ab4d530612",
+        "type": "ui_chart",
+        "z": "ce3e0c57ab8b309a",
+        "name": "",
+        "group": "19cb4a28f113a418",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "RMS Current",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1390,
+        "y": 740,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "54dfda3a02c94a79",
+        "type": "function",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Process Link Status",
+        "func": "let row = msg.row;\nlet cmd = row['Command String'];\nlet source = row['Source Address ZigBee'];\n\n// Ensure source address is in hexadecimal format with 4-digit padding\nif (source !== undefined && source !== null && !source.toString().startsWith(\"0x\")) {\n    source = \"0x\" + Number(source).toString(16).padStart(4, '0');\n}\n\n// Robust parsing: normalize Python-style quotes and parse as JSON\nvar fixed = cmd.replace(/'/g, '\"').replace(/True/g, 'true').replace(/False/g, 'false');\nvar obj;\ntry { obj = JSON.parse(fixed); }\ncatch(e) { node.warn('LinkStatus parse error: ' + e.message); return null; }\n\nvar links = obj['Links'] || [];\n\n// Retrieve stored link costs from global context\nvar linkCosts = global.get(\"linkCosts\") || {};\nif (!linkCosts[source]) {\n    linkCosts[source] = {};\n}\n\n// Update costs for each destination in this Link Status packet\nfor (var i = 0; i < links.length; i++) {\n    var dest = links[i]['Address'];\n    if (dest && !dest.toString().startsWith(\"0x\")) {\n        dest = \"0x\" + parseInt(dest, 16).toString(16).padStart(4, '0');\n    }\n    linkCosts[source][dest] = links[i]['Outgoing Cost'];\n}\n\nglobal.set(\"linkCosts\", linkCosts);\n\n// Build the CSV string in order of insertion (processing order)\nlet csvString = \"No.,Source,Destination,Cost\\n\";\nlet count = 1;\n\nfor (let src in linkCosts) {\n    for (let dst in linkCosts[src]) {\n        csvString += `${count},${src},${dst},${linkCosts[src][dst]}\\n`;\n        count++;\n    }\n}\n\nreturn { payload: csvString };",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 800,
+        "wires": [
+            [
+                "7f96b0bc900c9d5f"
+            ]
+        ]
+    },
+    {
+        "id": "7f96b0bc900c9d5f",
+        "type": "file",
+        "z": "ce3e0c57ab8b309a",
+        "name": "",
+        "filename": "/Users/carmengiaccotto/Desktop/outgoing_cost.csv",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1100,
+        "y": 800,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ea87900894b1d17f",
+        "type": "inject",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Send to ThingSpeak",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 170,
+        "y": 960,
+        "wires": [
+            [
+                "4e30c9b40887de4b"
+            ]
+        ]
+    },
+    {
+        "id": "4e30c9b40887de4b",
+        "type": "function",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Prepare ThingSpeak Queue",
+        "func": "let linkCosts = global.get(\"linkCosts\");\nif (!linkCosts) {\n    node.warn(\"Warning: no link costs in memory. Make sure Link Status packets have been processed.\");\n    return null;\n}\n\nlet sources = Object.keys(linkCosts);\nif (sources.length === 0) return null;\n\n// Find the smallest source address treating values as hexadecimal\nsources.sort((a, b) => parseInt(a, 16) - parseInt(b, 16));\nlet minSource = sources[0];\n\nlet destinations = Object.keys(linkCosts[minSource]);\n\n// Sort destination addresses in ascending hexadecimal order\ndestinations.sort((a, b) => parseInt(a, 16) - parseInt(b, 16));\n\nlet messages = [];\n\n// Build one message per destination in sorted order\nfor (let i = 0; i < destinations.length; i++) {\n    let dst = destinations[i];\n    let cost = linkCosts[minSource][dst];\n    \n    // The outgoing cost is the payload sent to ThingSpeak field1\n    messages.push({ payload: cost });\n}\n\n// Return array of messages: Node-RED will queue them through the rate limiter\nreturn [ messages ];",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 960,
+        "wires": [
+            [
+                "8fa029e21679bda8"
+            ]
+        ]
+    },
+    {
+        "id": "8fa029e21679bda8",
+        "type": "delay",
+        "z": "ce3e0c57ab8b309a",
+        "name": "Rate Limit 20s",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "20",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 700,
+        "y": 960,
+        "wires": [
+            [
+                "237f48ca1752003f"
+            ]
+        ]
+    },
+    {
+        "id": "237f48ca1752003f",
+        "type": "http request",
+        "z": "ce3e0c57ab8b309a",
+        "name": "",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://api.thingspeak.com/update?api_key=YOUR_WRITE_API_KEY&field1={{{payload}}}",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 930,
+        "y": 960,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "168b69160784847c",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "localhost",
+        "port": "1884",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "19cb4a28f113a418",
+        "type": "ui_group",
+        "name": "Sensori",
+        "tab": "63e41c9ff072ce4d",
+        "order": 1,
+        "disp": true,
+        "width": 6,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "63e41c9ff072ce4d",
+        "type": "ui_tab",
+        "name": "IoT Challenge",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "486c5bdd26d075e1",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-dashboard": "3.6.6"
+        }
+    }
+]
